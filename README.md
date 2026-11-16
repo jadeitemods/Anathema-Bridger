@@ -1,176 +1,204 @@
 # AnathemaBridger
 
-Three-way chat bridge between Minecraft, Discord and Valour.
+Joins three chats into one: **Minecraft**, **Discord** and **Valour**. A message typed
+in any of them appears in the other two, and files are shown as short labels such as
+`[image]` or `[GIF]`.
 
-Built and tested against BisectHosting, but nothing is specific to them: it works with
-any host that runs Fabric and allows outbound connections, and it runs entirely
-self-hosted on one machine. See [Hosting](#hosting) for the differences.
+It also watches your game server. Errors go to an alerts channel, and trusted staff can
+restart the server or send it a console command from Discord or Valour.
 
-```
-config.json                    <- the only file you edit
-├── anathema-bridge-node/       Node bridge (Discord side, WebSocket server)
-├── anathema-bridge-valour/     .NET adapter (Valour side, E2EE)
-├── anathema-bridge-valour-tests/
-└── anathema-bridge-mod/        Fabric mod (Minecraft side)
-```
+Built and tested with BisectHosting. Nothing here depends on them: it works with any
+host that runs Fabric, and it runs entirely on one computer if that is what you want.
 
-## Configuration
+## What you need
 
-Copy `config.example.json` to `config.json` and fill it in. Every process reads that
-one file; no secrets live in source or in per-service configs.
+- A computer that can stay switched on while people are chatting — this runs the bridge
+- A Minecraft server running **1.20.1 with Fabric**
+- A Discord bot and a channel for it to post in
+- A Valour bot and a channel for it to post in
+- A text editor (Notepad is fine) and about half an hour
 
-| Section | Keys | Used by |
-|---|---|---|
-| `discord` | `botToken`, `targetChannelId` | Node bridge |
-| `valour` | `botToken`, `botId`, `targetChannelId`, `planetId` | Valour adapter |
-| `minecraft` | `serverAddress` | Node bridge (reachability check) |
-| `hostedserver` | `apiKey`, `serverId` | Node bridge (alerts, power, console) |
-| `bridge` | `secret`, `publicUrl`, ports, `websocketPath`, `artifactToken` | all three |
-| `consolealerts` | `discordChannelId`, `valourChannelId`, `pollSeconds` | Node bridge |
-| `control` | `allowedUserIds` (Discord), `valourUserIds` (Valour) | bridge / adapter |
+## Words used below
 
-Where the values come from:
+| Word | Meaning here |
+|---|---|
+| **bridge** | the two background programs that pass messages between the three chats |
+| **mod** | the small add-on you drop into the Minecraft server |
+| **token** | a long password-like string that lets the bridge act as your bot |
+| **channel ID** | the number that identifies one channel |
+| **config.json** | the single file you edit; it holds every setting and password |
 
-- **`discord.*`** — Developer Portal → your app → Bot → Reset Token; channel ids from
-  right-click → Copy ID with Developer Mode on.
-- **`valour.*`** — Valour bot token and its user id, plus the channel and planet ids.
-- **`hostedserver.*`** — BisectHosting panel → Account → API Credentials, and the
-  server identifier from the panel.
-- **`bridge.secret`** — any long random string; the mod sends it as a header.
-- **`bridge.publicUrl`** — what the Minecraft server dials: your Tailscale Funnel URL
-  for a hosted server, or `ws://127.0.0.1:3000/minecraft` on one machine.
-- **`bridge.artifactToken`** — random string that lets the panel fetch built jars.
+## Setup
 
-Services fail fast and name the missing key, e.g.
-`required setting "valour.botToken" is missing or empty in …\config.json`.
-`ANATHEMA_CONFIG` points at the file from another location.
+### 1. Make your settings file
 
-## Minecraft end
+Copy `config.example.json`, rename the copy to `config.json`, and open it in a text
+editor. Everything below goes in that one file. The values inside `"quotes"` are the
+ones you replace; numbers and the `true`/`false` words stay as they are.
 
-The mod lives inside the server's directory, which hosted panels rarely expose for
-editing, so it gets a pointer — two lines in `fabric-server-launcher.properties`:
+### 2. Fill in the `discord` section
+
+1. Go to [discord.com/developers](https://discord.com/developers/applications), create
+   an application, open **Bot**, and press **Reset Token**. That long string is
+   `botToken` — copy it once, because Discord will not show it again.
+2. Turn on **Developer Mode** in Discord (User Settings → Advanced), then right-click
+   the channel you want the bot to post in and choose **Copy Channel ID**. That is
+   `targetChannelId`.
+3. Invite the bot to your server using the **OAuth2 → URL Generator** page, ticking
+   `bot` and `applications.commands`.
+
+### 3. Fill in the `valour` section
+
+In Valour, open your bot's settings for its token (`botToken`) and its user id
+(`botId`), then right-click the channel to copy its id (`targetChannelId`) and your
+planet's id (`planetId`).
+
+### 4. Choose a secret
+
+`bridge.secret` is a long random string that stops strangers connecting to your
+bridge. Any 40+ random characters will do — mash the keyboard, or use a password
+generator. You will paste the same value into the Minecraft server in step 7.
+
+Leave `bridge.artifactToken` as a second random string; it only controls who can
+download your built mod files.
+
+### 5. Decide where the Minecraft server is
+
+- **Server hosted elsewhere** — you need a public address for the Minecraft server to
+  reach. We use Tailscale Funnel; [docs/tailscale.md](docs/tailscale.md) walks through
+  it. Put the resulting address in `bridge.publicUrl`, e.g.
+  `wss://my-pc.tail1234.ts.net/minecraft`.
+- **Everything on one computer** — set `bridge.publicUrl` to
+  `ws://127.0.0.1:3000/minecraft`. Nothing is exposed to the internet.
+
+### 6. Optional: server panel details
+
+If your host is BisectHosting, put your panel API key in `hostedserver.apiKey` and the
+server's short identifier in `hostedserver.serverId` (panel → Account → API
+Credentials). This is what enables alerts, `status`, `restart` and `power`.
+
+Without it, chat still works; you just lose the monitoring and controls.
+
+### 7. Install the mod and start
+
+Upload `anathema-bridge-mod/build/libs/anathema-bridge-1.0.0.jar` (plus **Fabric API**,
+which the mod requires) into the server's `mods` folder.
+
+Then add two lines to the server's `fabric-server-launcher.properties`:
 
 ```properties
 anathema.bridge.url=wss://YOUR-MACHINE.YOUR-TAILNET.ts.net/minecraft
-anathema.bridge.secret=<the same bridge.secret from config.json>
+anathema.bridge.secret=the secret from step 4
 ```
 
-Both values come from `config.json`. Either paste them by hand, or let
-`tools/deploy.js` write them through the panel API.
+Both come straight from `config.json`. On BisectHosting you can instead run
+`node tools/deploy.js --restart`, which writes them through the panel for you.
 
-When the server runs on the same machine as the bridge, the mod can read `config.json`
-directly instead, via `"sharedConfig": "…\\AnathemaBridger\\config.json"` in its own
-`config/anathema-bridge.json`, or `ANATHEMA_CONFIG` in the launch script.
-
-## Running
+### 8. Start the bridge
 
 ```powershell
 .\anathema-bridge-node\run-bridge.cmd
 .\anathema-bridge-valour\run-adapter.cmd
 ```
 
-Both write to `logs\`. `run-adapter.ps1 -Foreground` runs in the console instead.
+Leave both windows open. Success looks like `Connected to bridge.` in the Minecraft
+server's console and `Mod connected.` in the bridge window.
 
-## Hosting
+## The whole config file at a glance
 
-### Hosted Minecraft server (what we run)
+| Section | What it holds |
+|---|---|
+| `discord` | bot token and the channel it posts in |
+| `valour` | bot token, bot id, channel id and planet id |
+| `minecraft` | the server's address, used for a reachability check |
+| `hostedserver` | optional panel key and server id (alerts and controls) |
+| `bridge` | shared secret, public address, ports, download token |
+| `consolealerts` | the two alert channels and how often to check |
+| `control` | who is allowed to run commands (Discord ids, Valour ids) |
 
-The bridge lives on a machine you control and the game server dials out to it, so no
-inbound port is opened on the host. Publish the WebSocket with Tailscale Funnel —
-[details](docs/tailscale.md) — and set `bridge.publicUrl` to the resulting
-`wss://…ts.net/minecraft`.
-
-The panel API (`hostedserver.*`) is optional; without it you lose alerts, `status`,
-`restart`, `power` and the deploy script, but chat still flows both ways.
-
-### Self-hosting everything on one machine
-
-1. Install Node 20+, the .NET runtime, and Java for the server.
-2. In `config.json`, set `publicUrl` to `ws://127.0.0.1:3000/minecraft` and leave
-   `hostedserver` blank — there is no panel to talk to.
-3. Start `run-bridge.cmd`, then `run-adapter.cmd`.
-4. Give the mod the same address and secret. Because the server is on this machine,
-   it can read `config.json` directly instead of duplicating values:
-
-   ```json
-   { "sharedConfig": "C:\\…\\AnathemaBridger\\config.json", "enabled": true }
-   ```
-
-   saved as `config/anathema-bridge.json` in the server directory.
-
-No Funnel, no panel, no public exposure: everything stays on loopback. The mod's
-`anathema.bridge.url` / `anathema.bridge.secret` properties work here too if you prefer
-not to use `sharedConfig`.
+Services say exactly what is missing if a value is blank, e.g.
+`required setting "valour.botToken" is missing or empty`.
 
 ## Commands
 
-Whitelisted by `control.allowedUserIds` / `control.valourUserIds`, and only accepted in
-the alerts channels. Discord also exposes them as `/bridger <subcommand>`.
+Only the people listed in `control.allowedUserIds` (Discord) or
+`control.valourUserIds` (Valour) may use these, and only in the alerts channels.
+Discord also offers them as `/bridger restart`, `/bridger power` and so on, which
+lists them as you type.
 
 ```
-!bridger restart     restart with a 15s countdown (warnings at 15s, 10s, 5s)
-!bridger power       stop if running, start if stopped
-!bridger status      state, TPS and player count
+!bridger restart     restart the server, with a 15 second countdown for players
+!bridger power       stop the server if it is running, start it if it is stopped
+!bridger status      current state, ticks per second and player count
 !bridger cmd [text]  send a console command, brackets required
 !bridger help
 ```
 
-Replies return only to the platform that asked. Power results and state changes are
-announced everywhere: both alerts channels and all three chat channels.
-
-A power action posts one message and edits it rather than posting each tick, and a
-second command mid-transition is answered with "already restarting (34s)".
+Replies come back to whichever platform asked. Restarts, starts and stops are
+announced in all three chats, and a power action updates one message rather than
+posting a new line every few seconds.
 
 ## Alerts
 
-Every 60 seconds the bridge reads the console tail and server state, then reports only
-what changed: console errors, offline/online transitions, player commands, and a single
-summary of bridge-link activity (`connected ×2, not connected ×1`). Repeated errors are
-capped at five per ten minutes with a suppressed count.
+Every 60 seconds the bridge reads the server's console and state, then posts only what
+changed: errors, the server going offline or coming back, commands players ran, and a
+one-line summary of the bridge's own connection. A crash loop cannot flood the channel
+— after five alerts in ten minutes it summarises and goes quiet.
 
-Console `say` from the panel is relayed to Discord and Valour as `[Minecraft] Console: …`
-— no player needs to be online, and join/leave notices are ignored.
+Console `say` messages appear as `[Minecraft] Console: …`, so a staff member using the
+panel is visible in chat even with nobody online.
 
-## Relaying attachments
+## Files sent in chat
 
-| Attachment | Relayed as |
+| What was sent | What Minecraft shows |
 |---|---|
 | one image | `[image]` |
 | one GIF | `[GIF]` |
 | one video / audio / anything else | `[video]` / `[audio]` / `[file]` |
-| several | `[3 files]` |
+| several at once | `[3 files]` |
 
-A post with no text relays just the tag; text plus a file becomes `look at this [GIF]`.
+Text plus a file becomes `look at this [GIF]`.
 
-## Build
+## Self-hosting on one computer
+
+Covered in step 5, in short: set `bridge.publicUrl` to `ws://127.0.0.1:3000/minecraft`,
+leave `hostedserver` blank, and let the mod read this file directly by putting this in
+the server's `config/anathema-bridge.json`:
+
+```json
+{ "sharedConfig": "C:\\…\\AnathemaBridger\\config.json", "enabled": true }
+```
+
+Nothing is then exposed to the internet, and no panel API is involved.
+
+## Building it yourself
+
+Only needed if you change the code.
 
 ```powershell
 cd anathema-bridge-mod
-.\gradlew build        # jar lands in build\libs
+.\gradlew build        # the jar lands in build\libs
 dotnet build ..\anathema-bridge-valour\AnathemaValourAdapter.csproj
 dotnet test ..\anathema-bridge-valour-tests\AnathemaValourAdapter.Tests.csproj
 ```
 
-## Tools
+## Extra tools
 
-- `node tools/deploy.js [--restart] [--dry-run]` — optional: writes the mod settings and
-  pulls the jar through the panel API. Equivalent to copying the lines by hand.
-- `node tools/format-config.js` — re-aligns `config.json` after a programmatic edit.
-- `node tools/anonymize.js <dir> --brand Anathema` — renamed, credential-free copy for
-  publishing: config, E2EE keys, logs and build output excluded, host names replaced.
+- `node tools/deploy.js [--restart] [--dry-run]` — optional shortcut that writes the mod
+  settings and copies the jar through the BisectHosting panel.
+- `node tools/format-config.js` — tidies `config.json` back into aligned columns.
+- `node tools/anonymize.js <folder> --brand Anathema` — makes a renamed copy with no
+  credentials, for publishing.
 
-## Security
+## Security in one paragraph
 
-- Every listener binds to `127.0.0.1`. The mod socket authenticates with
-  `X-Bridge-Secret` during the handshake and rejects unknown clients with 401.
-- `config.json` holds four credentials and is gitignored; only
-  `config.example.json` is committed.
-- Exposing the bridge through Funnel makes that endpoint public — the secret is the
-  only gate, so treat it as a password.
+Every part of the bridge listens only on `127.0.0.1`, and the Minecraft mod must send
+the shared secret before it is accepted. `config.json` holds four credentials and is
+excluded from version control; only `config.example.json` is published. If you expose
+the bridge through Funnel, that address is public, so treat the secret like a password.
 
 ## Licence
 
-Proprietary, all rights reserved — see [LICENSE](LICENSE). The source is published so
-it can be read and run, not modified or redistributed. Running an unmodified copy for
-your own servers is permitted; publishing altered copies, or bundling this with a
-modpack or paid service, is not.
+Proprietary, all rights reserved — see [LICENSE](LICENSE). The source is published so it
+can be read and run: running an unmodified copy for your own servers is allowed;
+publishing altered copies, or bundling this with a modpack or paid service, is not.
