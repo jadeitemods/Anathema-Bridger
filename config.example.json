@@ -1,0 +1,49 @@
+{
+  "discord": {
+    "botToken": "",
+    "botId":           "PASTE_DISCORD_BOT_ID",
+    "targetChannelId": "PASTE_DISCORD_CHANNEL_ID"
+  },
+
+  "valour": {
+    "botToken": "",
+    "botId":           "PASTE_VALOUR_BOT_ID",
+    "targetChannelId": "PASTE_VALOUR_CHANNEL_ID",
+    "planetId":        "PASTE_VALOUR_PLANET_ID"
+  },
+
+  "minecraft": {
+    "serverAddress": "127.0.0.1:25565"
+  },
+
+  "bridge": {
+    "secret": "",
+    "websocketPort":         3000,
+    "websocketPath":         "/minecraft",
+    "valourIngressPort":     3001,
+    "valourSendPort":        3002,
+    "ignoreCommandPrefixes": "/,!,.",
+    "publicUrl":             "wss://YOUR-MACHINE.YOUR-TAILNET.ts.net/minecraft",
+    "artifactToken": ""
+  },
+
+  "hostedserver": {
+    "apiKey": "",
+    "serverId": "PASTE_SERVER_ID"
+  },
+
+  "control": {
+    "allowedUserIds": [
+      "PASTE_DISCORD_USER_ID"
+    ],
+    "valourUserIds":  [
+      "PASTE_VALOUR_USER_ID"
+    ]
+  },
+
+  "consolealerts": {
+    "discordChannelId": "PASTE_ALERTS_CHANNEL_ID",
+    "valourChannelId":  "",
+    "pollSeconds":      60
+  }
+}

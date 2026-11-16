@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "anathema-bridge",
+  "version": "${version}",
+  "name": "Anathema Bridge",
+  "description": "Three-way chat bridge between Minecraft, Discord, and Valour.",
+  "authors": ["AnathemaOrigins"],
+  "license": "LicenseRef-Proprietary",
+  "environment": "server",
+  "entrypoints": {
+    "server": [
+      "com.anathema.bridge.AnathemaBridgeMod"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.17.2",
+    "fabric-api": ">=0.92.2",
+    "minecraft": "1.20.1",
+    "java": ">=17"
+  }
+}

@@ -1,0 +1,10 @@
+# Keep source line endings stable across platforms.
+* text=auto eol=lf
+
+# Windows scripts need CRLF to run.
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+*.bat text eol=crlf
+
+*.jar binary
+*.png binary

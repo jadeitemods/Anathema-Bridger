@@ -1,0 +1,11 @@
+# Real credentials: never commit this.
+config.json
+
+# Runtime output and build artefacts.
+**/logs/
+**/bin/
+**/obj/
+**/build/
+**/.gradle/
+**/node_modules/
+**/.valour-e2ee/
