@@ -26,9 +26,10 @@ host that runs Fabric, and it runs entirely on one computer if that is what you 
 
 ### Platforms
 Everything here is built and tested on **Windows**. The launch scripts are Windows
-`.cmd` and PowerShell files. The Node and Java parts should behave the same on macOS
-and Linux, but nobody has run them there, so this project does not claim support for
-them yet — the scripts would need equivalents first.
+`.cmd` and PowerShell files. You are very welcome to try macOS or Linux — the Node and
+Java parts may well behave identically — but we cannot test or guarantee it, so it is
+not officially supported. Expect to write your own start scripts, and please report
+what happens if you do.
 
 
 ## Words used below
@@ -64,6 +65,10 @@ ones you replace; numbers and the `true`/`false` words stay as they are.
 3. Back in the bot list, the number shown as `ID:` under your bot's name is `botId`.
 4. Right-click the channel you want it to post in and copy its id (`targetChannelId`),
    then do the same for your planet (`planetId`).
+
+> **Careful:** Valour's Developer menu also contains **OAuth Apps**. Those are for
+> applications that sign a *person* in. This bridge is a bot and needs the token from
+> the **Bots** page — an OAuth app secret will not work.
 
 ### 4. Choose a secret
 `bridge.secret` is a long random string that stops strangers connecting to your
