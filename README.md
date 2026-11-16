@@ -203,6 +203,16 @@ excluded from version control; only `config.example.json` is published. If you e
 the bridge through Funnel, that address is public, so treat the secret like a password.
 
 ## Licence
-Proprietary, all rights reserved — see [LICENSE](LICENSE). The source is published so it
-can be read and run: running an unmodified copy for your own servers is allowed;
-publishing altered copies, or bundling this with a modpack or paid service, is not.
+**AGPL-3.0-or-later** — the full text is in [LICENSE](LICENSE).
+Copyright (c) 2026 Anathema_Core (github.com/jadeitemods).
+
+This project links against the Valour SDK, which is itself AGPL-3.0, so the whole
+project is licensed the same way. In plain terms:
+
+- you may run, study, change and share it;
+- if you share a modified version, you must publish its source under the same licence;
+- if you run a modified version as a network service, its users are entitled to the source.
+
+Forks are therefore allowed, provided they stay open. If you would rather nobody could
+modify or redistribute it, keep the repository private — a public AGPL project cannot
+prevent that.

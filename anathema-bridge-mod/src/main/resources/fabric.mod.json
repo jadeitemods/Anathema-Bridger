@@ -5,7 +5,7 @@
   "name": "Anathema Bridge",
   "description": "Three-way chat bridge between Minecraft, Discord, and Valour.",
   "authors": ["Anathema_Core"],
-  "license": "LicenseRef-Proprietary",
+  "license": "AGPL-3.0-or-later",
   "environment": "server",
   "entrypoints": {
     "server": [
