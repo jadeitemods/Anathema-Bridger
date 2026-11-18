@@ -20,9 +20,18 @@ function Write-Log([string]$message) {
     Write-Host $line
 }
 
-# Single instance: two watchdogs would race to restart the same process and log noise.
-$instanceMutex = New-Object System.Threading.Mutex($false, 'Global\AnathemaBridgerWatchdog')
-if (-not $instanceMutex.WaitOne(0)) {
+# Single instance. Two watchdogs race to restart the same process and double the log.
+# A named mutex is unreliable here (Global\ needs a privilege a normal user lacks, and
+# errors are suppressed by design), so check for a sibling process directly.
+$siblings = Get-CimInstance Win32_Process |
+    Where-Object {
+        $_.Name -eq 'powershell.exe' -and
+        $_.CommandLine -match '-File' -and
+        $_.CommandLine -like '*watchdog.ps1*' -and
+        $_.ProcessId -ne $PID
+    }
+
+if ($siblings) {
     exit
 }
 

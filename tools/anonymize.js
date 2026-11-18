@@ -31,6 +31,7 @@ const SKIP_DIRS = new Set([
 const SKIP_FILES = new Set([
   'config.json',
   'global-commands-backup.json',
+  'watchdog.log',
 ]);
 
 const TEXT_EXTENSIONS = new Set([
