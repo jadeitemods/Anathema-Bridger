@@ -3,6 +3,7 @@ config.json
 
 # Runtime output and build artefacts.
 **/logs/
+watchdog.log
 **/bin/
 **/obj/
 **/build/

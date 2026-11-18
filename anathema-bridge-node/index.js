@@ -43,6 +43,19 @@ function loadConfig() {
     return value;
   };
 
+  // A typo like "pollSeconds": "60s" becomes NaN; without this, setInterval(NaN) would
+  // spin the panel API as fast as the machine allows.
+  const number = (key, value, fallback, { min = 1, max = 65535 } = {}) => {
+    if (value === undefined || value === null || value === '') return fallback;
+
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed) || parsed < min || parsed > max) {
+      failStartup(`"${key}" must be a number between ${min} and ${max}, got ${JSON.stringify(value)}`);
+    }
+
+    return parsed;
+  };
+
   const discord = raw.discord || {};
   const valour = raw.valour || {};
   const bridge = raw.bridge || {};
@@ -67,7 +80,10 @@ function loadConfig() {
     consolealerts: {
       discordChannelId: (raw.consolealerts || {}).discordChannelId || '',
       valourChannelId: (raw.consolealerts || {}).valourChannelId || '',
-      pollSeconds: Number((raw.consolealerts || {}).pollSeconds || 60),
+      pollSeconds: number('consolealerts.pollSeconds', (raw.consolealerts || {}).pollSeconds, 60, {
+        min: 10,
+        max: 3600,
+      }),
     },
     control: {
       allowedUserIds: ((raw.control || {}).allowedUserIds || []).map(String),
@@ -76,10 +92,10 @@ function loadConfig() {
 
     bridgeSecret: required('bridge.secret', bridge.secret),
     artifactToken: bridge.artifactToken || '',
-    websocketPort: Number(bridge.websocketPort || 3000),
+    websocketPort: number('bridge.websocketPort', bridge.websocketPort, 3000),
     websocketPath: bridge.websocketPath || '/minecraft',
-    valourIngressPort: Number(bridge.valourIngressPort || 3001),
-    valourSendPort: Number(bridge.valourSendPort || 3002),
+    valourIngressPort: number('bridge.valourIngressPort', bridge.valourIngressPort, 3001),
+    valourSendPort: number('bridge.valourSendPort', bridge.valourSendPort, 3002),
     ignoreCommandPrefixes: String(bridge.ignoreCommandPrefixes || '/,!,.,')
       .split(',')
       .map(prefix => prefix.trim())

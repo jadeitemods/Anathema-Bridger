@@ -83,6 +83,11 @@ public class BridgeClient {
     private void connect() {
         if (!running) return;
 
+        // Clear the pending flag as this attempt starts. Without this, a failed attempt
+        // (for example a handshake timeout) leaves the flag set, every later
+        // scheduleReconnect() returns early, and the mod never tries again.
+        reconnectScheduled = false;
+
         String url = BridgeConfig.INSTANCE.bridgeUrl;
         String secret = BridgeConfig.INSTANCE.secret == null ? "" : BridgeConfig.INSTANCE.secret.trim();
 

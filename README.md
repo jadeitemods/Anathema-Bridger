@@ -189,6 +189,10 @@ dotnet test ..\anathema-bridge-valour-tests\AnathemaValourAdapter.Tests.csproj
 ```
 
 ## Extra tools
+- `tools/watchdog.ps1` — every 30 seconds, restarts the bridge or the adapter if either
+  has stopped, so a crash or a closed window does not silently end chat. Run
+  `tools/install-autostart.ps1` once to launch it at sign-in (`-Remove` undoes it). It
+  writes `watchdog.log` next to the scripts.
 - `node tools/deploy.js [--restart] [--dry-run]` — optional shortcut that writes the mod
   settings and copies the jar through the BisectHosting panel.
 - `node tools/format-config.js` — tidies `config.json` back into aligned columns.
