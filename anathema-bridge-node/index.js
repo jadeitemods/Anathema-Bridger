@@ -243,6 +243,9 @@ if (bisect.configured && config.consolealerts.discordChannelId) {
   let valourAlertFailures = 0;
 
   alertNotify = async text => {
+    // `!bridger pause` silences every alert, but not chat or command replies.
+    if (control.isPaused()) return;
+
     await control.notify(text);
 
     if (!config.consolealerts.valourChannelId) return;

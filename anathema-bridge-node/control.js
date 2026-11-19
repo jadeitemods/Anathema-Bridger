@@ -14,6 +14,8 @@ const HELP = [
   '`!bridger power` — stop it if running, start it if stopped',
   '`!bridger status` — report server status, TPS and player count',
   '`!bridger cmd [command]` — run a console command, brackets required',
+  '`!bridger pause [minutes]` — silence alerts (default 120), chat keeps running',
+  '`!bridger resume` — bring alerts back',
   '`!bridger help` — this list',
 ].join('\n');
 
@@ -42,6 +44,13 @@ function createControl({
 }) {
   let busy = null;
   let channel = null;
+  let pausedUntil = 0;
+
+  const isPaused = () => Date.now() < pausedUntil;
+
+  function minutesLeft() {
+    return Math.max(1, Math.round((pausedUntil - Date.now()) / 60000));
+  }
 
   async function resolveChannel() {
     if (!channel) {
@@ -266,6 +275,28 @@ function createControl({
       return { handled: true };
     }
 
+    if (command === 'pause') {
+      const requested = Number(rest[0]);
+      const minutes = Number.isFinite(requested) && requested > 0 ? Math.min(requested, 24 * 60) : 120;
+
+      pausedUntil = Date.now() + minutes * 60000;
+      logger.log(`[Control] alerts paused for ${minutes} minutes.`);
+      await reply(`Alerts silenced for ${minutes} minutes. Chat keeps flowing; \`!bridger resume\` ends it early.`);
+      return { handled: true };
+    }
+
+    if (command === 'resume') {
+      if (!isPaused()) {
+        await reply('Alerts were already running.');
+        return { handled: true };
+      }
+
+      pausedUntil = 0;
+      logger.log('[Control] alerts resumed.');
+      await reply('Alerts resumed.');
+      return { handled: true };
+    }
+
     if (command === 'cmd') {
       const raw = rest.join(' ');
       const bracketed = raw.match(/^\[(.+)\]$/s);
@@ -344,6 +375,8 @@ function createControl({
     notify,
     HELP,
     isBusy: () => busy !== null,
+    isPaused,
+    minutesLeft,
     executeText: (text, options) => execute(text, options),
   };
 }

@@ -8,7 +8,7 @@
 
 const { SlashCommandBuilder } = require('discord.js');
 
-const NAMES = ['restart', 'power', 'status', 'cmd', 'help'];
+const NAMES = ['restart', 'power', 'status', 'pause', 'resume', 'cmd', 'help'];
 
 function definitions() {
   return [
@@ -18,6 +18,20 @@ function definitions() {
       .addSubcommand(sub => sub.setName('restart').setDescription('Restart the hosted server (15s countdown)'))
       .addSubcommand(sub => sub.setName('power').setDescription('Stop the server if running, start it if stopped'))
       .addSubcommand(sub => sub.setName('status').setDescription('Report server status, TPS and player count'))
+      .addSubcommand(sub =>
+        sub
+          .setName('pause')
+          .setDescription('Silence alerts for a while (chat keeps flowing)')
+          .addIntegerOption(option =>
+            option
+              .setName('minutes')
+              .setDescription('How long to stay quiet; defaults to 120')
+              .setRequired(false)
+              .setMinValue(1)
+              .setMaxValue(1440),
+          ),
+      )
+      .addSubcommand(sub => sub.setName('resume').setDescription('Bring alerts back'))
       .addSubcommand(sub => sub.setName('help').setDescription('List the bridge controls'))
       .addSubcommand(sub =>
         sub
@@ -56,8 +70,14 @@ function createHandler({ control, channelId, allowedUserIds, logger = console })
     }
 
     const subcommand = interaction.options.getSubcommand();
-    const argument = subcommand === 'cmd' ? interaction.options.getString('command') : '';
-    const text = subcommand === 'cmd' ? `!bridger cmd [${argument}]` : `!bridger ${subcommand}`;
+    let text = `!bridger ${subcommand}`;
+
+    if (subcommand === 'cmd') {
+      text = `!bridger cmd [${interaction.options.getString('command')}]`;
+    } else if (subcommand === 'pause') {
+      const minutes = interaction.options.getInteger('minutes');
+      text = minutes ? `!bridger pause ${minutes}` : '!bridger pause';
+    }
 
     let replied = false;
     const reply = async content => {
