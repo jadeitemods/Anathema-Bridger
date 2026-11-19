@@ -140,9 +140,16 @@ lists them as you type.
 !bridger restart     restart the server, with a 15 second countdown for players
 !bridger power       stop the server if it is running, start it if it is stopped
 !bridger status      current state, ticks per second and player count
+!bridger pause [n]   silence alerts for n minutes (default 120); chat keeps flowing
+!bridger resume      bring alerts back
 !bridger cmd [text]  send a console command, brackets required
 !bridger help        brings up this guide in chat (not Minecraft chat)
 ```
+
+`pause` is for closing the laptop: the bridge stays up and keeps relaying chat, but stops
+posting alerts and console errors, so waking it later does not dump a backlog into the
+channels. Command replies still work, which is how `resume` reaches you — if the bridge
+itself restarts, the pause is forgotten and alerts come back.
 
 Replies come back to whichever platform asked. Restarts, starts and stops are
 announced in all three chats, and a power action updates one message rather than
